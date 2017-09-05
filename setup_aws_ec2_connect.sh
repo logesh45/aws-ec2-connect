@@ -28,6 +28,19 @@
 
 echo "This program uses AWSCLI to communicate with AWS. Please be sure you already have AWS CLI installed and setup with your Access and secret keys."
 
+
+if command -v aw < /dev/null 2<&1; then
+
+  break;
+fi
+
+if command -v aws > /dev/null 2>&1; then
+  echo "Found aws cli installed, proceeding."
+else
+  echo "aws cli is not available. install aws cli and try again."
+  exit
+fi
+
 echo "Enter your instance id."
 read INSTANCE_ID
 

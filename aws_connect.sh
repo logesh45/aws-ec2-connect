@@ -40,10 +40,4 @@ IP_ADDRESS=$(aws ec2 describe-instances --instance-id $INSTANCE_ID --output text
 
 echo $IP_ADDRESS
 
-ssh-keygen -R $IP_ADDRESS
-ssh-keyscan -4 $IP_ADDRESS >> ~/.ssh/known_hosts
-ssh-keyscan -H $IP_ADDRESS >> ~/.ssh/known_hosts
-
-sleep 5
-
 ssh -i $PEM_FILE ubuntu@$IP_ADDRESS
