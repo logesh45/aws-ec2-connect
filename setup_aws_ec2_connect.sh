@@ -28,26 +28,19 @@
 
 echo "This program uses AWSCLI to communicate with AWS. Please be sure you already have AWS CLI installed and setup with your Access and secret keys."
 
-
-if command -v aw < /dev/null 2<&1; then
-
-  break;
-fi
-
 if command -v aws > /dev/null 2>&1; then
   echo "Found aws cli installed, proceeding."
 else
   echo "aws cli is not available. install aws cli and try again."
-  exit
+  exit 1
 fi
 
 echo "Enter your instance id."
 read INSTANCE_ID
 
 echo "Which region is your instance in? "
-# read AWS_REGION
 
-select choice in "us-east-1" "us-east-2" "us-west-1" "us-west-2" "ap-south-1" "ap-northeast-1" "ap-northeast-2" "ap-southeast-1" "ap-southeast-2" "ca-central-1" "eu-central-1" "eu-west-1" "eu-west-2" "sa-east-1" "*"; do
+select choice in "us-east-1" "us-east-2" "us-west-1" "us-west-2" "ap-south-1" "ap-northeast-1" "ap-northeast-2" "ap-southeast-1" "ap-southeast-2" "ca-central-1" "eu-central-1" "eu-west-1" "eu-west-2" "sa-east-1"; do
 case "$choice" in
     us-east-1) echo "$choice"; AWS_REGION=$choice;
     break;;
@@ -77,7 +70,7 @@ case "$choice" in
     break;;
     sa-east-1) echo "$choice"; AWS_REGION=$choice;
     break;;
-    *) echo "$choice Invalid Option"; # go around;
+    *) echo "Invalid option. Please try again.";
     continue;;
 esac
 done
@@ -88,13 +81,22 @@ echo "You selected instance with id $INSTANCE_ID in $AWS_REGION."
 echo "Enter your .pem file name with extension (It should be in the same directory as this script)"
 read PEM_FILE
 
+if [ ! -f "$PEM_FILE" ]; then
+  echo "Error: PEM file '$PEM_FILE' not found in the current directory."
+  exit 1
+fi
+
+echo "Enter the SSH username for your instance (default: ubuntu, use ec2-user for Amazon Linux):"
+read SSH_USER
+SSH_USER="${SSH_USER:-ubuntu}"
 
 echo "Setting up."
 
 echo "#!/usr/bin/env bash" > config.sh
-echo "INSTANCE_ID="\"$INSTANCE_ID\""" >> config.sh
-echo "AWS_REGION="\"$AWS_REGION\""" >> config.sh
-echo "PEM_FILE="\"$PEM_FILE\""" >> config.sh
+echo "INSTANCE_ID=\"$INSTANCE_ID\"" >> config.sh
+echo "AWS_REGION=\"$AWS_REGION\"" >> config.sh
+echo "PEM_FILE=\"$PEM_FILE\"" >> config.sh
+echo "SSH_USER=\"$SSH_USER\"" >> config.sh
 echo "echo \"\$INSTANCE_ID in \$AWS_REGION with \$PEM_FILE\"" >> config.sh
 
 echo "You can now run aws_connect.sh to connect to the specified instance."
