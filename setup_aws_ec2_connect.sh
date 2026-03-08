@@ -26,6 +26,8 @@
 # SOFTWARE.
 
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "This program uses AWSCLI to communicate with AWS. Please be sure you already have AWS CLI installed and setup with your Access and secret keys."
 
 if command -v aws > /dev/null 2>&1; then
@@ -81,10 +83,11 @@ echo "You selected instance with id $INSTANCE_ID in $AWS_REGION."
 echo "Enter your .pem file name with extension (It should be in the same directory as this script)"
 read PEM_FILE
 
-if [ ! -f "$PEM_FILE" ]; then
-  echo "Error: PEM file '$PEM_FILE' not found in the current directory."
+if [ ! -f "$SCRIPT_DIR/$PEM_FILE" ]; then
+  echo "Error: PEM file '$PEM_FILE' not found in the script directory ($SCRIPT_DIR)."
   exit 1
 fi
+PEM_FILE="$SCRIPT_DIR/$PEM_FILE"
 
 echo "Enter the SSH username for your instance (default: ubuntu, use ec2-user for Amazon Linux):"
 read SSH_USER
@@ -92,14 +95,14 @@ SSH_USER="${SSH_USER:-ubuntu}"
 
 echo "Setting up."
 
-echo "#!/usr/bin/env bash" > config.sh
-echo "INSTANCE_ID=\"$INSTANCE_ID\"" >> config.sh
-echo "AWS_REGION=\"$AWS_REGION\"" >> config.sh
-echo "PEM_FILE=\"$PEM_FILE\"" >> config.sh
-echo "SSH_USER=\"$SSH_USER\"" >> config.sh
-echo "echo \"\$INSTANCE_ID in \$AWS_REGION with \$PEM_FILE\"" >> config.sh
+echo "#!/usr/bin/env bash" > "$SCRIPT_DIR/config.sh"
+echo "INSTANCE_ID=\"$INSTANCE_ID\"" >> "$SCRIPT_DIR/config.sh"
+echo "AWS_REGION=\"$AWS_REGION\"" >> "$SCRIPT_DIR/config.sh"
+echo "PEM_FILE=\"$PEM_FILE\"" >> "$SCRIPT_DIR/config.sh"
+echo "SSH_USER=\"$SSH_USER\"" >> "$SCRIPT_DIR/config.sh"
+echo "echo \"\$INSTANCE_ID in \$AWS_REGION with \$PEM_FILE\"" >> "$SCRIPT_DIR/config.sh"
 
 echo "You can now run aws_connect.sh to connect to the specified instance."
-chmod +x aws_connect.sh
+chmod +x "$SCRIPT_DIR/aws_connect.sh"
 
 echo "If you need to change the instance id or region, just run this script again."

@@ -37,8 +37,14 @@ aws ec2 start-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID"
 
 echo "Waiting for instance to be up and running."
 
+# Brief pause to allow AWS to transition the instance out of stopped state
+# before we begin polling (avoids a false-positive "stopped" error).
+sleep 2
+
 TIMEOUT=120
-ELAPSED=0
+ELAPSED=2
+STOPPED_GRACE=5
+STOPPED_COUNT=0
 while true; do
   state=$(aws ec2 describe-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" \
     --output text --query 'Reservations[*].Instances[*].State.Name')
@@ -50,8 +56,19 @@ while true; do
       ;;
     pending)
       echo -n '.'
+      STOPPED_COUNT=0
       ;;
-    stopped|stopping|terminated|shutting-down)
+    stopped)
+      # Tolerate stopped briefly at the start — start-instances is async
+      STOPPED_COUNT=$((STOPPED_COUNT + 1))
+      if [ "$STOPPED_COUNT" -gt "$STOPPED_GRACE" ]; then
+        echo ""
+        echo "Error: Instance is still stopped after ${STOPPED_GRACE}s. Aborting."
+        exit 1
+      fi
+      echo -n '.'
+      ;;
+    stopping|terminated|shutting-down)
       echo ""
       echo "Error: Instance entered unexpected state: $state. Aborting."
       exit 1
@@ -73,6 +90,11 @@ done
 
 IP_ADDRESS=$(aws ec2 describe-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
+
+if [ -z "$IP_ADDRESS" ] || [ "$IP_ADDRESS" = "None" ]; then
+  echo "Error: Instance has no public IP address. It may be in a private subnet or missing an Elastic IP."
+  exit 1
+fi
 
 echo "$IP_ADDRESS"
 
