@@ -95,12 +95,14 @@ SSH_USER="${SSH_USER:-ubuntu}"
 
 echo "Setting up."
 
-echo "#!/usr/bin/env bash" > "$SCRIPT_DIR/config.sh"
-echo "INSTANCE_ID=\"$INSTANCE_ID\"" >> "$SCRIPT_DIR/config.sh"
-echo "AWS_REGION=\"$AWS_REGION\"" >> "$SCRIPT_DIR/config.sh"
-echo "PEM_FILE=\"$PEM_FILE\"" >> "$SCRIPT_DIR/config.sh"
-echo "SSH_USER=\"$SSH_USER\"" >> "$SCRIPT_DIR/config.sh"
-echo "echo \"\$INSTANCE_ID in \$AWS_REGION with \$PEM_FILE\"" >> "$SCRIPT_DIR/config.sh"
+{
+  printf '#!/usr/bin/env bash\n'
+  printf 'INSTANCE_ID=%q\n' "$INSTANCE_ID"
+  printf 'AWS_REGION=%q\n' "$AWS_REGION"
+  printf 'PEM_FILE=%q\n' "$PEM_FILE"
+  printf 'SSH_USER=%q\n' "$SSH_USER"
+  printf 'echo "$INSTANCE_ID in $AWS_REGION with $PEM_FILE"\n'
+} > "$SCRIPT_DIR/config.sh"
 
 echo "You can now run aws_connect.sh to connect to the specified instance."
 chmod +x "$SCRIPT_DIR/aws_connect.sh"
