@@ -26,28 +26,23 @@
 # SOFTWARE.
 
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "This program uses AWSCLI to communicate with AWS. Please be sure you already have AWS CLI installed and setup with your Access and secret keys."
-
-
-if command -v aw < /dev/null 2<&1; then
-
-  break;
-fi
 
 if command -v aws > /dev/null 2>&1; then
   echo "Found aws cli installed, proceeding."
 else
   echo "aws cli is not available. install aws cli and try again."
-  exit
+  exit 1
 fi
 
 echo "Enter your instance id."
-read INSTANCE_ID
+read -r INSTANCE_ID
 
 echo "Which region is your instance in? "
-# read AWS_REGION
 
-select choice in "us-east-1" "us-east-2" "us-west-1" "us-west-2" "ap-south-1" "ap-northeast-1" "ap-northeast-2" "ap-southeast-1" "ap-southeast-2" "ca-central-1" "eu-central-1" "eu-west-1" "eu-west-2" "sa-east-1" "*"; do
+select choice in "us-east-1" "us-east-2" "us-west-1" "us-west-2" "ap-south-1" "ap-northeast-1" "ap-northeast-2" "ap-southeast-1" "ap-southeast-2" "ca-central-1" "eu-central-1" "eu-west-1" "eu-west-2" "sa-east-1"; do
 case "$choice" in
     us-east-1) echo "$choice"; AWS_REGION=$choice;
     break;;
@@ -77,27 +72,43 @@ case "$choice" in
     break;;
     sa-east-1) echo "$choice"; AWS_REGION=$choice;
     break;;
-    *) echo "$choice Invalid Option"; # go around;
+    *) echo "Invalid option. Please try again.";
     continue;;
 esac
 done
 
+if [ -z "$AWS_REGION" ]; then
+  echo "Error: No region selected. Aborting."
+  exit 1
+fi
 
 echo "You selected instance with id $INSTANCE_ID in $AWS_REGION."
 
 echo "Enter your .pem file name with extension (It should be in the same directory as this script)"
-read PEM_FILE
+read -r PEM_FILE
 
+if [ ! -f "$SCRIPT_DIR/$PEM_FILE" ]; then
+  echo "Error: PEM file '$PEM_FILE' not found in the script directory ($SCRIPT_DIR)."
+  exit 1
+fi
+PEM_FILE="$SCRIPT_DIR/$PEM_FILE"
+
+echo "Enter the SSH username for your instance (default: ubuntu, use ec2-user for Amazon Linux):"
+read -r SSH_USER
+SSH_USER="${SSH_USER:-ubuntu}"
 
 echo "Setting up."
 
-echo "#!/usr/bin/env bash" > config.sh
-echo "INSTANCE_ID="\"$INSTANCE_ID\""" >> config.sh
-echo "AWS_REGION="\"$AWS_REGION\""" >> config.sh
-echo "PEM_FILE="\"$PEM_FILE\""" >> config.sh
-echo "echo \"\$INSTANCE_ID in \$AWS_REGION with \$PEM_FILE\"" >> config.sh
+{
+  printf '#!/usr/bin/env bash\n'
+  printf 'INSTANCE_ID=%q\n' "$INSTANCE_ID"
+  printf 'AWS_REGION=%q\n' "$AWS_REGION"
+  printf 'PEM_FILE=%q\n' "$PEM_FILE"
+  printf 'SSH_USER=%q\n' "$SSH_USER"
+  printf 'echo "$INSTANCE_ID in $AWS_REGION with $PEM_FILE"\n'
+} > "$SCRIPT_DIR/config.sh"
 
 echo "You can now run aws_connect.sh to connect to the specified instance."
-chmod +x aws_connect.sh
+chmod +x "$SCRIPT_DIR/aws_connect.sh"
 
 echo "If you need to change the instance id or region, just run this script again."
