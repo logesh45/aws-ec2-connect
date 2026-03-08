@@ -33,7 +33,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 source "$CONFIG_FILE"
 
-aws ec2 start-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" \
+aws ec2 start-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" > /dev/null \
   || { echo "Error: Failed to start instance '$INSTANCE_ID'. Check permissions and instance ID."; exit 1; }
 
 echo "Waiting for instance to be up and running."
@@ -46,9 +46,24 @@ TIMEOUT=120
 ELAPSED=2
 STOPPED_GRACE=5
 STOPPED_COUNT=0
+API_ERROR_GRACE=3
+API_ERROR_COUNT=0
 while true; do
   state=$(aws ec2 describe-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" \
-    --output text --query 'Reservations[*].Instances[*].State.Name')
+    --output text --query 'Reservations[*].Instances[*].State.Name' 2>/dev/null)
+  if [ $? -ne 0 ] || [ -z "$state" ]; then
+    API_ERROR_COUNT=$((API_ERROR_COUNT + 1))
+    if [ "$API_ERROR_COUNT" -ge "$API_ERROR_GRACE" ]; then
+      echo ""
+      echo "Error: AWS API call failed ${API_ERROR_GRACE} times in a row. Check connectivity or throttling."
+      exit 1
+    fi
+    echo -n '?'
+    sleep 1
+    ELAPSED=$((ELAPSED + 1))
+    continue
+  fi
+  API_ERROR_COUNT=0
   case "$state" in
     running)
       echo ""
