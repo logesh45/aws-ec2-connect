@@ -61,7 +61,7 @@ while true; do
     stopped)
       # Tolerate stopped briefly at the start — start-instances is async
       STOPPED_COUNT=$((STOPPED_COUNT + 1))
-      if [ "$STOPPED_COUNT" -gt "$STOPPED_GRACE" ]; then
+      if [ "$STOPPED_COUNT" -ge "$STOPPED_GRACE" ]; then
         echo ""
         echo "Error: Instance is still stopped after ${STOPPED_GRACE}s. Aborting."
         exit 1
