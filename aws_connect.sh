@@ -33,6 +33,11 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 source "$CONFIG_FILE"
 
+if [ ! -f "$PEM_FILE" ]; then
+  echo "Error: PEM file '$PEM_FILE' not found. Re-run setup_aws_ec2_connect.sh to update the path."
+  exit 1
+fi
+
 aws ec2 start-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" > /dev/null \
   || { echo "Error: Failed to start instance '$INSTANCE_ID'. Check permissions and instance ID."; exit 1; }
 
