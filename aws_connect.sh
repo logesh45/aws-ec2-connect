@@ -114,8 +114,13 @@ while true; do
   ELAPSED=$((ELAPSED + 1))
 done
 
-IP_ADDRESS=$(aws ec2 describe-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" \
-  --output text --query 'Reservations[].Instances[].PublicIpAddress')
+IP_ADDRESS=""
+for i in 1 2 3; do
+  IP_ADDRESS=$(aws ec2 describe-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" \
+    --output text --query 'Reservations[].Instances[].PublicIpAddress' 2>/dev/null)
+  [ -n "$IP_ADDRESS" ] && [ "$IP_ADDRESS" != "None" ] && break
+  sleep 2
+done
 
 if [ -z "$IP_ADDRESS" ] || [ "$IP_ADDRESS" = "None" ]; then
   echo "Error: Instance has no public IP address. It may be in a private subnet or missing an Elastic IP."
