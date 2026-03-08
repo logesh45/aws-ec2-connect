@@ -61,6 +61,11 @@ while true; do
     echo -n '?'
     sleep 1
     ELAPSED=$((ELAPSED + 1))
+    if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+      echo ""
+      echo "Error: Timed out after ${TIMEOUT}s waiting for instance to start."
+      exit 1
+    fi
     continue
   fi
   API_ERROR_COUNT=0
