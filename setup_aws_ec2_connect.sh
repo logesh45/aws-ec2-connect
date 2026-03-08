@@ -38,7 +38,7 @@ else
 fi
 
 echo "Enter your instance id."
-read INSTANCE_ID
+read -r INSTANCE_ID
 
 echo "Which region is your instance in? "
 
@@ -77,11 +77,15 @@ case "$choice" in
 esac
 done
 
+if [ -z "$AWS_REGION" ]; then
+  echo "Error: No region selected. Aborting."
+  exit 1
+fi
 
 echo "You selected instance with id $INSTANCE_ID in $AWS_REGION."
 
 echo "Enter your .pem file name with extension (It should be in the same directory as this script)"
-read PEM_FILE
+read -r PEM_FILE
 
 if [ ! -f "$SCRIPT_DIR/$PEM_FILE" ]; then
   echo "Error: PEM file '$PEM_FILE' not found in the script directory ($SCRIPT_DIR)."
@@ -90,7 +94,7 @@ fi
 PEM_FILE="$SCRIPT_DIR/$PEM_FILE"
 
 echo "Enter the SSH username for your instance (default: ubuntu, use ec2-user for Amazon Linux):"
-read SSH_USER
+read -r SSH_USER
 SSH_USER="${SSH_USER:-ubuntu}"
 
 echo "Setting up."

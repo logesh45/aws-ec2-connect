@@ -33,7 +33,8 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 source "$CONFIG_FILE"
 
-aws ec2 start-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID"
+aws ec2 start-instances --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" \
+  || { echo "Error: Failed to start instance '$INSTANCE_ID'. Check permissions and instance ID."; exit 1; }
 
 echo "Waiting for instance to be up and running."
 
@@ -63,7 +64,7 @@ while true; do
       STOPPED_COUNT=$((STOPPED_COUNT + 1))
       if [ "$STOPPED_COUNT" -ge "$STOPPED_GRACE" ]; then
         echo ""
-        echo "Error: Instance is still stopped after ${STOPPED_GRACE}s. Aborting."
+        echo "Error: Instance is still stopped after ${STOPPED_GRACE} polling attempts. Aborting."
         exit 1
       fi
       echo -n '.'
